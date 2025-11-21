@@ -1,0 +1,29 @@
+query getLojasHome {
+  lojas(first: 1000) {
+    edges {
+      node {
+        id
+        databaseId
+        acfLojas {
+          cidade
+          emails {
+            email
+          }
+          endereco
+          estado
+          galeriaFotos {
+            nodes {
+              mediaItemUrl
+            }
+          }
+          horarioFuncionamento
+          latitude
+          longitude
+          nomeLoja
+          telefone
+          whatsapp
+        }
+      }
+    }
+  }
+}

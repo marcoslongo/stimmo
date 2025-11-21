@@ -1,0 +1,10 @@
+query getCategoriasPortfolioHome {
+  categoriasPortfolio {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}

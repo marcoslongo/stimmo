@@ -1,0 +1,20 @@
+
+query getCelebridadesHome {
+  celebridades {
+    edges {
+      node {
+        title
+        id
+        acfCelebridades {
+          followers
+          image {
+            node {
+              mediaItemUrl
+            }
+          }
+          role
+        }
+      }
+    }
+  }
+}

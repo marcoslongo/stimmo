@@ -1,0 +1,40 @@
+query getPortfolioHome {
+  projetos(first:1000) {
+    edges {
+      node {
+        id
+        title
+        slug
+        tags {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        categoriasPortfolio {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+        acfPortfolio {
+          image {
+            node {
+              mediaItemUrl
+            }
+          }
+          description
+          gallery {
+            nodes {
+              mediaItemUrl
+            }
+          }
+        }
+      }
+    }
+  }
+}

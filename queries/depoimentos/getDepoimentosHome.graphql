@@ -1,0 +1,13 @@
+query getDepoimentosHome {
+  depoimentos {
+    edges {
+      node {
+        title
+        acfDepoimentos {
+          role
+          text
+        }
+      }
+    }
+  }
+}
