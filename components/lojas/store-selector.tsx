@@ -9,6 +9,7 @@ import { MapPin, Phone, Clock, LocateFixed } from "lucide-react"
 import { AppointmentModal } from "./appointment-modal"
 import { StoreDetailsModal } from "./store-details-modal"
 import { GetLojasHomeQuery } from "@/generated/graphql"
+import Image from "next/image"
 
 interface StoreSelectorProps {
   data: GetLojasHomeQuery;
@@ -139,8 +140,22 @@ export function StoreSelector({ data }: StoreSelectorProps) {
   }
 
   return (
-    <section id="lojas" className="py-32 bg-muted" ref={ref}>
-      <div className="container mx-auto px-4">
+    <section id="lojas" className="py-32 bg-muted relative overflow-hidden" ref={ref}>
+      <Image
+        src={'/assets/images/detail-01.webp'}
+        width={350}
+        height={174}
+        alt=""
+        className="absolute top-[-80px] lg:top-1/4 left-0 z-10"
+      />
+      <Image
+        src={'/assets/images/detail-02.webp'}
+        width={350}
+        height={174}
+        alt=""
+        className="absolute bottom-[-80px] lg:top-1/4 right-0"
+      />
+      <div className="container mx-auto px-4 py-4 relative z-20 bg-muted 2xl:bg-transparent">
         <div className="max-w-4xl mx-auto">
           <motion.div
             className="text-center mb-12"
