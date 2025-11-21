@@ -67,7 +67,7 @@ export function Features() {
               Diferenciais que transformam ambientes.
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Entre tecnologia e design, o que nos move é criar ambientes onde você se sinta, verdadeiramente, em casa.
+              Entre tecnologia, design e praticidade, criamos ambientes que acompanham o seu ritmo e maximizam cada momento.
             </p>
           </motion.div>
 

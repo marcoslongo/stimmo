@@ -48,7 +48,7 @@ export function ContentDepoimentos({ data }: ContentProps) {
               Confiança de quem já transformou seus ambientes
             </h2>
             <p className="text-lg text-muted-foreground">
-              Confiança e credibilidade de uma indústria com quase 40 anos de mercado e atestada pelos nossos clientes
+              Quase quatro décadas de história, milhares de projetos entregues e clientes em todo o país comprovam a credibilidade e a qualidade da Stimmo.
             </p>
           </motion.div>
 

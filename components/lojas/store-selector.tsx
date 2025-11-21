@@ -146,14 +146,14 @@ export function StoreSelector({ data }: StoreSelectorProps) {
         width={350}
         height={174}
         alt=""
-        className="absolute top-[-80px] lg:top-1/4 left-0 z-10"
+        className="absolute top-[-80px] lg:top-[180px] left-0 z-10"
       />
       <Image
         src={'/assets/images/detail-02.webp'}
         width={350}
         height={174}
         alt=""
-        className="absolute bottom-[-80px] lg:top-1/4 right-0"
+        className="absolute bottom-[-80px] lg:top-[180px] right-0"
       />
       <div className="container mx-auto px-4 py-4 relative z-20 bg-muted 2xl:bg-transparent">
         <div className="max-w-4xl mx-auto">
