@@ -3,7 +3,7 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 const config: CodegenConfig = {
   overwrite: true,
   schema: {
-    'https://manager.simonetto.com.br/graphql': {
+    'https://manager.stimmo.com.br/graphql': {
       headers: {
         Authorization: 'Bearer SEU_TOKEN_AQUI',
       },

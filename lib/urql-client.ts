@@ -1,6 +1,6 @@
 import { Client, fetchExchange } from 'urql'
 
-const WORDPRESS_API_URL = 'https://manager.simonetto.com.br/graphql'
+const WORDPRESS_API_URL = 'https://manager.stimmo.com.br/graphql'
 
 export const urqlClient = new Client({
   url: WORDPRESS_API_URL,
