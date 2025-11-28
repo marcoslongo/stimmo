@@ -179,7 +179,7 @@ export function StoreSelector({ data }: StoreSelectorProps) {
           >
             <Button
               onClick={getUserLocation}
-              className="h-12 px-6 cursor-pointer"
+              className="h-12 px-6 cursor-pointer bg-[#f21e1d] hover:bg-[#3A3156]"
               disabled={!!userLocation || isLoadingLocation}
             >
               <LocateFixed className="mr-2 h-5 w-5" />
