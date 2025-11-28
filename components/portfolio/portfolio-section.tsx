@@ -13,6 +13,7 @@ import { PortfolioDetailsModal } from "./portfolio-details-modal"
 import { GetCategoriasPortfolioHomeQuery, GetLojasHomeQuery, GetPortfolioHomeQuery } from "@/generated/graphql"
 import { getPortfolioBySlug } from "@/services/getPortfolioBySlug"
 import { PortfolioDetailsSkeleton } from "./portfolio-details-skeleton"
+import Image from "next/image"
 import {
   Carousel,
   CarouselContent,
@@ -209,7 +210,21 @@ export default function PortfolioSection({ data, categories, lojas }: PortfolioS
   }
 
   return (
-    <section className="relative bg-white py-24 lg:pt-32 lg:pb-24" id="portfolio">
+    <section className="bg-white py-24 lg:pt-32 lg:pb-24 relative" id="portfolio">
+      <Image
+        alt=""
+        src={"/assets/images/img-azul.webp"}
+        width={800}
+        height={100}
+        className="absolute top-0 right-0"
+      />
+      <Image
+        alt=""
+        src={"/assets/images/img-azul.webp"}
+        width={800}
+        height={100}
+        className="absolute bottom-0 left-0"
+      />
       <div className="container mx-auto px-4">
         <div className="mb-16 text-center">
           <motion.h2
