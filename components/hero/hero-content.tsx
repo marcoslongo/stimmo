@@ -23,12 +23,11 @@ export function HeroContent() {
       initial="hidden"
       animate="visible"
     >
-      <h1 className="text-3xl md:text-4xl lg:text-4xl text-balance leading-tight text-white">
-        Sofisticação em cada detalhe.{" "}
-        <Image alt="" src="/assets/images/milimetricamente-2.webp" width={662} height={121} />
+      <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-balance leading-tight text-white">
+        Solicite seu projeto de móveis planejados e maximize seus sonhos
       </h1>
       <p className="text-lg md:text-xl text-white leading-relaxed">
-        A melhor experiência é se sentir em casa, em ambientes personalizados milimetricamente para refletir quem você é.
+        Indústria com quase 40 anos de tradição e marca com revendas em todo o país.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center items-center pt-4">
