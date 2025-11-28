@@ -3,6 +3,7 @@
 import { motion, useInView, easeOut } from "framer-motion"
 import { useRef, useEffect, useState } from "react"
 import { Package2, PencilRuler, Truck, Palette, Award } from "lucide-react"
+import Image from "next/image"
 
 const AnimatedNumber = ({ value, suffix = "" }: { value: number; suffix?: string }) => {
   const [displayValue, setDisplayValue] = useState(0)
@@ -75,7 +76,6 @@ const features = [
   },
 ]
 
-// 🎨 CORES DO BACKGROUND
 const colors = ["#037856", "#FFD201", "#F11E1D", "#3A3156", "#F9BBA8"]
 
 export function Features() {
@@ -100,10 +100,23 @@ export function Features() {
   }
 
   return (
-    <section className="py-20 bg-slate-50 dark:bg-slate-950" ref={ref}>
-      <div className="container mx-auto px-4">
+    <section className="py-40 bg-slate-50 dark:bg-slate-950 relative" ref={ref}>
+      <Image
+        src={'/assets/images/img_vermelho.webp'}
+        alt=''
+        width={800}
+        height={100}
+        className="absolute right-0 top-0"
+      />
+      <Image
+        src={'/assets/images/img_vermelho.webp'}
+        alt=''
+        width={800}
+        height={100}
+        className="absolute left-0 bottom-0"
+      />
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-6xl mx-auto">
-
           <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 30 }}
