@@ -22,7 +22,7 @@ export function ContentCelebridades({ data }: ContentCelebridadesProps) {
   const celebridades = data.celebridades?.edges || [];
 
   return (
-    <section className="bg-muted py-20" ref={ref}>
+    <section className="bg-[#F9BBA8] py-20" ref={ref}>
       <div className="max-w-6xl mx-auto bg-white rounded-lg">
         <motion.div
           className="p-8 text-center"

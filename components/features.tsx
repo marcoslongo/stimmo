@@ -143,7 +143,7 @@ export function Features() {
               return (
                 <motion.div
                   key={index}
-                  className="w-[30%] group p-6 rounded-3xl shadow-lg transition-all duration-300 text-white"
+                  className="w-full lg:w-[30%] group p-6 rounded-3xl shadow-lg transition-all duration-300 text-white"
                   style={{ backgroundColor: bg }}
                   variants={itemVariants}
                 >
