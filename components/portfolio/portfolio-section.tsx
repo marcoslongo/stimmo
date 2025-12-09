@@ -211,7 +211,7 @@ export default function PortfolioSection({ data, categories, lojas }: PortfolioS
   }
 
   return (
-    <section className="bg-white py-24 lg:pt-32 lg:pb-24 relative" id="portfolio">
+    <section className="bg-white py-24 lg:pt-40 lg:pb-32 relative" id="portfolio">
       <Image
         alt=""
         src={"/assets/images/img-azul.webp"}
