@@ -282,7 +282,7 @@ export default function PortfolioSection({ data, categories, lojas }: PortfolioS
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                <div className="flex justify-center gap-2 mt-6">
+                <div className="flex justify-center gap-2">
                   <CarouselPrevious className="relative -translate-y-0" />
                   <CarouselNext className="relative -translate-y-0" />
                 </div>
