@@ -8,6 +8,9 @@ export const query = graphql(`query getCategoriasPortfolioHome {
       node {
         id
         name
+        icone {
+          sourceUrl
+        }
       }
     }
   }

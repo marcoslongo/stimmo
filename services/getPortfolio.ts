@@ -22,6 +22,9 @@ export const query = graphql(`query getPortfolioHome {
             node {
               id
               name
+              icone {
+                sourceUrl
+              }
             }
           }
         }

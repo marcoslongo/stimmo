@@ -41,7 +41,7 @@ export function ContentCelebridades({ data }: ContentCelebridadesProps) {
             }}
             className="w-full"
           >
-            <CarouselContent className="-ml-4">
+            <CarouselContent className="mt-4 flex justify-center">
               {celebridades.map((celeb, index) => (
                 <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/4">
                   <motion.div

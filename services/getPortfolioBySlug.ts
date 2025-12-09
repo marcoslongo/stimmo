@@ -24,6 +24,9 @@ export const query = graphql(`query getProjetoBySlug($slug: ID!) {
         node {
           id
           name
+          icone {
+            sourceUrl
+          }
         }
       }
     }

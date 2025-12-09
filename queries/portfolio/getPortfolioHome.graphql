@@ -18,6 +18,9 @@ query getPortfolioHome {
             node {
               id
               name
+              icone{
+                sourceUrl
+              }
             }
           }
         }
