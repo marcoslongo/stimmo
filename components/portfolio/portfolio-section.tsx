@@ -35,7 +35,6 @@ export default function PortfolioSection({ data, categories, lojas }: PortfolioS
   const [selectedItemSlug, setSelectedItemSlug] = useState<string | null>(null)
   const [modalView, setModalView] = useState<ModalView>("details")
   const { toast } = useToast()
-  console.log(data);
 
   const { favoriteStore } = useFavorites()
 

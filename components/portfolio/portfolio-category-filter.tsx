@@ -9,7 +9,6 @@ interface CategoryFilterProps {
 }
 
 export function CategoryFilter({ categories, activeCategory, onCategoryChange }: CategoryFilterProps) {
-  console.log(categories);
   return (
     <div className="mb-12 flex flex-wrap justify-center gap-3">
       {categories.categoriasPortfolio?.edges.map((category, index) => (

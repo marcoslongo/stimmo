@@ -156,8 +156,6 @@ export function HeroForm({
         throw new Error(data.error || "Erro ao enviar orçamento")
       }
 
-      console.log("Lead criado:", data)
-
       toast.success(
         "Orçamento solicitado! Entraremos em contato em breve para conversarmos sobre seu projeto.",
         {
