@@ -58,72 +58,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let pipefyCardId = null
     let validatedStoreId = null
-    let storeData = null
 
-    // Validar loja ID antes de enviar
     if (lojaId) {
       const validation = await validateStoreId(lojaId)
       
       if (validation.isValid && validation.storeData) {
         validatedStoreId = parseInt(lojaId)
-        storeData = validation.storeData
       }
     }
 
-    // Enviar para Pipefy
-    if (process.env.PIPEFY_TOKEN && process.env.PIPEFY_PIPE_ID) {
-      const query = `
-        mutation {
-          createCard(input: {
-            pipe_id: "${process.env.PIPEFY_PIPE_ID}",
-            fields_attributes: [
-              { field_id: "nome", field_value: "${nome}" },
-              { field_id: "email", field_value: "${email}" },
-              { field_id: "telefone", field_value: "${telefone}" },
-              { field_id: "cidade", field_value: "${cidade || ""}" },
-              { field_id: "estado", field_value: "${estado || ""}" },
-              { field_id: "interesse", field_value: "${interesse || ""}" },
-              { field_id: "expectativa_de_investimento", field_value: "${expectativaInvestimento || ""}" },
-              { field_id: "loja_regi_o", field_value: "${lojaRegiao || ""}" },
-              ${validatedStoreId ? `{ field_id: "loja_id", field_value: "${validatedStoreId}" },` : ''}
-              { field_id: "mensagem", field_value: "${mensagem || ""}" }
-            ]
-          }) {
-            card {
-              id
-              title
-            }
-          }
-        }
-      `
-
-      const pipefyHeaders: HeadersInit = {
-        "Content-Type": "application/json",
-      }
-      if (process.env.PIPEFY_TOKEN) {
-        pipefyHeaders["Authorization"] = `Bearer ${process.env.PIPEFY_TOKEN}`
-      }
-
-      try {
-        const pipefyResponse = await fetch("https://api.pipefy.com/graphql", {
-          method: "POST",
-          headers: pipefyHeaders,
-          body: JSON.stringify({ query }),
-        })
-
-        const pipefyData = await pipefyResponse.json()
-        
-        if (pipefyData?.data?.createCard?.card?.id) {
-          pipefyCardId = pipefyData.data.createCard.card.id
-        }
-      } catch (pipefyError) {
-        // Log error silently in production
-      }
-    }
-
-    // Enviar para WordPress
     if (process.env.WORDPRESS_API_URL) {
       const wpHeaders: HeadersInit = {
         "Content-Type": "application/json",
@@ -149,10 +93,6 @@ export async function POST(request: NextRequest) {
         wpPayload.loja_id = validatedStoreId
       }
 
-      if (pipefyCardId) {
-        wpPayload.pipefy_card_id = pipefyCardId
-      }
-
       try {
         const wpResponse = await fetch(`${process.env.WORDPRESS_API_URL}/wp-json/api/v1/leads`, {
           method: "POST",
@@ -171,7 +111,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Lead registrado com sucesso",
-      pipefyCardId: pipefyCardId || null,
       lojaId: validatedStoreId || null,
     })
 

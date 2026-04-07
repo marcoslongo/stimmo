@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -8,24 +8,59 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { MapPin, ChevronsUpDown } from "lucide-react"
-import { StoreSelectorForm } from "../lojas/store-selector-form"
+import { ChevronsUpDown } from "lucide-react"
 import { fetchEstados, fetchCidades, Estado, Cidade } from "@/lib/location-service"
 import { interestOptions, investmentOptions } from "@/utils/constantes"
+import { maskPhone } from "@/utils/maskPhone"
 
-
-
-const MAX_DISTANCE_KM = 100000
+const OPENCAGE_API_KEY = process.env.NEXT_PUBLIC_OPENCAGE_API_KEY!
+const MAX_DISTANCE_KM = 300
 
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
   const R = 6371
   const dLat = ((lat2 - lat1) * Math.PI) / 180
   const dLng = ((lng2 - lng1) * Math.PI) / 180
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+async function geocodeLocation(
+  city: string,
+  stateName: string,
+  neighborhood?: string
+): Promise<{ lat: number; lng: number } | null> {
+  const queryParts = [neighborhood?.trim() || null, city, stateName, "Brasil"].filter(Boolean)
+  const query = encodeURIComponent(queryParts.join(", "))
+  const url = `https://api.opencagedata.com/geocode/v1/json?q=${query}&key=${OPENCAGE_API_KEY}&language=pt&countrycode=br&limit=1&no_annotations=1`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const data = await res.json()
+    const result = data?.results?.[0]
+    if (!result) return null
+    return { lat: result.geometry.lat, lng: result.geometry.lng }
+  } catch {
+    return null
+  }
+}
+
+function findNearestStore(stores: any[], lat: number, lng: number) {
+  const withDistance = stores
+    .filter((s) => s.lat != null && s.lng != null)
+    .map((s) => ({ ...s, distance: calculateDistance(lat, lng, s.lat, s.lng) }))
+    .sort((a, b) => a.distance - b.distance)
+
+  const nearest = withDistance.find((s) => s.distance <= MAX_DISTANCE_KM)
+  if (nearest) return nearest
+
+  const matriz = stores.find((s) => s.eMatriz === true)
+  if (matriz) return matriz
+
+  return withDistance[0] ?? null
 }
 
 interface FormFieldsProps {
@@ -35,6 +70,7 @@ interface FormFieldsProps {
     phone: string
     state: string
     city: string
+    neighborhood: string
     interests: string[]
     message: string
     storeId: string
@@ -44,7 +80,6 @@ interface FormFieldsProps {
   formErrors: Record<string, string>
   setFormErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>
   sortedStores: any[]
-  handleOpenStoresSelect: () => void
   favoriteStore: any
 }
 
@@ -54,7 +89,6 @@ export function FormFields({
   formErrors,
   setFormErrors,
   sortedStores,
-  handleOpenStoresSelect,
   favoriteStore,
 }: FormFieldsProps) {
   const [open, setOpen] = useState(false)
@@ -63,13 +97,12 @@ export function FormFields({
   const [loadingEstados, setLoadingEstados] = useState(true)
   const [loadingCidades, setLoadingCidades] = useState(false)
 
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
-  const [locationRequested, setLocationRequested] = useState(false)
+  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "found" | "error">("idle")
+  const [userOverride, setUserOverride] = useState(false)
+  const lastGeoKey = useRef("")
+  const geoDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    loadEstados()
-  }, [])
+  useEffect(() => { loadEstados() }, [])
 
   useEffect(() => {
     if (formData.state) {
@@ -81,57 +114,39 @@ export function FormFields({
 
   useEffect(() => {
     if (favoriteStore && !formData.storeId) {
-      setFormData((prev: any) => ({
-        ...prev,
-        storeId: favoriteStore.id
-      }))
+      setFormData((prev: any) => ({ ...prev, storeId: favoriteStore.id }))
     }
   }, [favoriteStore])
 
-  const handleStoreSelectOpen = () => {
-    handleOpenStoresSelect()
+  useEffect(() => {
+    const { city, state, neighborhood } = formData
+    if (!city.trim() || !state || sortedStores.length === 0 || userOverride) return
 
-    if (!locationRequested && !userLocation) {
-      setLocationRequested(true)
-      getUserLocation()
-    }
-  }
+    if (geoDebounce.current) clearTimeout(geoDebounce.current)
 
-  const getUserLocation = () => {
-    setIsLoadingLocation(true)
+    geoDebounce.current = setTimeout(() => {
+      const geoKey = `${city}|${state}|${neighborhood}`
+      if (geoKey === lastGeoKey.current) return
+      lastGeoKey.current = geoKey
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          })
-          setIsLoadingLocation(false)
-        },
-        (error) => {
-          console.log("Localização não disponível:", error.message)
-          setIsLoadingLocation(false)
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-      )
-    } else {
-      setIsLoadingLocation(false)
-    }
-  }
+      setGeoStatus("loading")
 
-  const sortedStoresByDistance = useMemo(() => {
-    if (!userLocation) return sortedStores
+      const stateName = estados.find((e) => e.id.toString() === state)?.nome ?? state
 
-    const storesWithDistance = sortedStores.map((store) => ({
-      ...store,
-      distance: calculateDistance(userLocation.lat, userLocation.lng, store.lat, store.lng),
-    }))
+      geocodeLocation(city, stateName, neighborhood).then((coords) => {
+        if (!coords) { setGeoStatus("error"); return }
 
-    const filtered = storesWithDistance.filter((store) => store.distance <= MAX_DISTANCE_KM)
+        const nearest = findNearestStore(sortedStores, coords.lat, coords.lng)
+        if (!nearest) { setGeoStatus("error"); return }
 
-    return filtered.sort((a, b) => a.distance - b.distance)
-  }, [userLocation, sortedStores])
+        setFormData((prev: any) => ({ ...prev, storeId: nearest.id.toString() }))
+        setGeoStatus("found")
+        setFormErrors((prev) => { const e = { ...prev }; delete e.storeId; return e })
+      })
+    }, 800)
+
+    return () => { if (geoDebounce.current) clearTimeout(geoDebounce.current) }
+  }, [formData.city, formData.state, formData.neighborhood, sortedStores, userOverride, estados])
 
   const loadEstados = async () => {
     try {
@@ -158,25 +173,26 @@ export function FormFields({
   }
 
   const handleStateChange = (value: string) => {
-    setFormData({ ...formData, state: value, city: "" })
-    if (formErrors.state) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors.state
-        return newErrors
-      })
-    }
+    setFormData((prev: any) => ({ ...prev, state: value, city: "", neighborhood: "", storeId: "" }))
+    setUserOverride(false)
+    setGeoStatus("idle")
+    lastGeoKey.current = ""
+    if (formErrors.state) setFormErrors((prev) => { const e = { ...prev }; delete e.state; return e })
   }
 
   const handleCityChange = (value: string) => {
-    setFormData({ ...formData, city: value })
-    if (formErrors.city) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors.city
-        return newErrors
-      })
-    }
+    setFormData((prev: any) => ({ ...prev, city: value, neighborhood: "", storeId: "" }))
+    setUserOverride(false)
+    setGeoStatus("idle")
+    lastGeoKey.current = ""
+    if (formErrors.city) setFormErrors((prev) => { const e = { ...prev }; delete e.city; return e })
+  }
+
+  const handleNeighborhoodChange = (value: string) => {
+    setFormData((prev: any) => ({ ...prev, neighborhood: value }))
+    setUserOverride(false)
+    lastGeoKey.current = ""
+    if (formErrors.neighborhood) setFormErrors((prev) => { const e = { ...prev }; delete e.neighborhood; return e })
   }
 
   const handleInterestToggle = (value: string) => {
@@ -186,31 +202,18 @@ export function FormFields({
         : [...prev.interests, value]
       return { ...prev, interests }
     })
-    if (formErrors.interests) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors.interests
-        return newErrors
-      })
-    }
+    if (formErrors.interests) setFormErrors((prev) => { const e = { ...prev }; delete e.interests; return e })
   }
 
   const handleInvestmentChange = (value: string) => {
-    setFormData({ ...formData, investment: value })
-    if (formErrors.investment) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors.investment
-        return newErrors
-      })
-    }
+    setFormData((prev: any) => ({ ...prev, investment: value }))
+    if (formErrors.investment) setFormErrors((prev) => { const e = { ...prev }; delete e.investment; return e })
   }
 
   const getInterestLabel = () => {
     if (formData.interests.length === 0) return "Selecione os ambientes"
-    if (formData.interests.length === 1) {
+    if (formData.interests.length === 1)
       return interestOptions.find((opt) => opt.value === formData.interests[0])?.label
-    }
     return `${formData.interests.length} ambientes selecionados`
   }
 
@@ -221,10 +224,11 @@ export function FormFields({
         <Input
           id="name"
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e) => setFormData((p: any) => ({ ...p, name: e.target.value }))}
           placeholder="Seu nome"
           className={formErrors.name ? "border-red-500" : ""}
         />
+        {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
       </div>
 
       <div className="space-y-1">
@@ -233,10 +237,11 @@ export function FormFields({
           id="email"
           type="email"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onChange={(e) => setFormData((p: any) => ({ ...p, email: e.target.value }))}
           placeholder="seu@email.com"
           className={formErrors.email ? "border-red-500" : ""}
         />
+        {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
       </div>
 
       <div className="space-y-1">
@@ -244,10 +249,13 @@ export function FormFields({
         <Input
           id="phone"
           value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          inputMode="numeric"
+          maxLength={15}
+          onChange={(e) => setFormData((p: any) => ({ ...p, phone: maskPhone(e.target.value) }))}
           placeholder="(00) 00000-0000"
           className={formErrors.phone ? "border-red-500" : ""}
         />
+        {formErrors.phone && <p className="text-sm text-red-500">{formErrors.phone}</p>}
       </div>
 
       <div className="space-y-1">
@@ -264,6 +272,7 @@ export function FormFields({
             ))}
           </SelectContent>
         </Select>
+        {formErrors.state && <p className="text-sm text-red-500">{formErrors.state}</p>}
       </div>
 
       <div className="space-y-1">
@@ -274,11 +283,12 @@ export function FormFields({
           disabled={!formData.state || loadingCidades}
         >
           <SelectTrigger className={`w-full ${formErrors.city ? "border-red-500" : ""}`}>
-            <SelectValue placeholder={!formData.state
-              ? "Selecione o estado primeiro"
-              : loadingCidades
-                ? "Carregando..."
-                : "Selecione a cidade"}
+            <SelectValue
+              placeholder={
+                !formData.state ? "Selecione o estado primeiro"
+                  : loadingCidades ? "Carregando..."
+                    : "Selecione a cidade"
+              }
             />
           </SelectTrigger>
           <SelectContent>
@@ -289,6 +299,20 @@ export function FormFields({
             ))}
           </SelectContent>
         </Select>
+        {formErrors.city && <p className="text-sm text-red-500">{formErrors.city}</p>}
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="neighborhood" className="text-sm">Bairro *</Label>
+        <Input
+          id="neighborhood"
+          value={formData.neighborhood}
+          placeholder="Digite seu bairro"
+          disabled={!formData.city}
+          onChange={(e) => handleNeighborhoodChange(e.target.value)}
+          className={formErrors.neighborhood ? "border-red-500" : ""}
+        />
+        {formErrors.neighborhood && <p className="text-sm text-red-500">{formErrors.neighborhood}</p>}
       </div>
 
       <div className="space-y-1">
@@ -315,10 +339,7 @@ export function FormFields({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleInterestToggle(option.value)
-                    }}
+                    onClick={(e) => { e.preventDefault(); handleInterestToggle(option.value) }}
                     className="w-full flex items-center space-x-2 rounded-sm px-2 py-2 hover:bg-accent cursor-pointer text-left"
                   >
                     <Checkbox checked={checked} />
@@ -327,8 +348,14 @@ export function FormFields({
                 )
               })}
             </div>
+            <div className="border-t p-2">
+              <Button type="button" size="sm" className="w-full cursor-pointer" onClick={() => setOpen(false)}>
+                Confirmar
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
+        {formErrors.interests && <p className="text-sm text-red-500">{formErrors.interests}</p>}
       </div>
 
       <div className="space-y-1 md:col-span-2">
@@ -345,37 +372,7 @@ export function FormFields({
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="space-y-1 md:col-span-2">
-        <Label htmlFor="store" className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          Unidade de preferência *
-        </Label>
-
-        <div onClick={handleStoreSelectOpen}>
-          <StoreSelectorForm
-            stores={sortedStoresByDistance.map((s) => ({
-              ...s,
-              id: s.id.toString(),
-            }))}
-            value={formData.storeId}
-            onValueChange={(value) => {
-              setFormData({ ...formData, storeId: value })
-
-              if (formErrors.storeId) {
-                setFormErrors((prev) => {
-                  const newErrors = { ...prev }
-                  delete newErrors.storeId
-                  return newErrors
-                })
-              }
-            }}
-            preferredStoreId={favoriteStore?.id}
-            placeholder="Selecione a unidade mais próxima"
-            className={formErrors.storeId ? "border-red-500" : ""}
-          />
-        </div>
+        {formErrors.investment && <p className="text-sm text-red-500">{formErrors.investment}</p>}
       </div>
 
       <div className="space-y-1 md:col-span-2">
@@ -383,7 +380,7 @@ export function FormFields({
         <Textarea
           id="message"
           value={formData.message}
-          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+          onChange={(e) => setFormData((p: any) => ({ ...p, message: e.target.value }))}
           placeholder="Conte-nos sobre seu projeto..."
           rows={3}
         />
